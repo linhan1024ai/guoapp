@@ -70,11 +70,13 @@ Flutter 多端独立短剧 / 影视应用，原名「短剧库 APP」。站源�
 | Android 8.0+ | 三架构（arm64-v8a / armeabi-v7a / x86_64）APK；同一签名可覆盖升级 |
 | Windows 10/11 x64 | 完整 ZIP 解压后运行 `hongguojian.exe` / `zhenguojian.exe`，保留所有 DLL 与 `data`；局域网原生发现依赖 Windows 10 1903+ |
 | Android TV | 与手机共用源码，自动识别电视模式并保持横屏；待电视 / 盒子实机验收 |
-| iOS 15.1+ | 已加入工程、Go 核心链接、媒体依赖、文件管理与构建脚本；iOS 播放页禁用 media_kit_video 硬件纹理加速以规避 libmpv 渲染崩溃；待 Xcode 构建与真机验收，无已签名 IPA |
+| iOS 15.1+ | 已加入工程、Go 核心链接、媒体依赖、文件管理与构建脚本；iOS 播放页禁用 media_kit_video 硬件纹理加速以规避 libmpv 渲染崩溃；0.2.65+72 已通过云端 Xcode release 构建与 IPA 元数据 / SHA256 检查，生成未签名 IPA；待 iPhone 自签安装及真机验收，无已签名 IPA |
 
 `INSTALL_FAILED_NO_MATCHING_ABIS` 表示 APK 与设备架构不匹配，请更换对应架构安装包。
 
 ### GitHub Actions
+
+2026-10-07：真果鉴 0.2.65+72 的独立 iOS 云端构建成功（[运行记录](https://github.com/linhan1024ai/guoapp/actions/runs/37615507864)）。`dist/ios/zhenguojian-0.2.65+72-ios-unsigned.ipa` 已下载并校验，包含 `Payload/Runner.app`，最低 iOS 15.1。需在自己的签名工具中登录 Apple ID 自签安装；未进行 iPhone 真机验收。
 
 独立流程 **Build Zhenguojian unsigned IPA** 使用云端 macOS 构建全站源版，输出 `zhenguojian-ios-unsigned` 下载产物（未签名 IPA 与 SHA256）。推送 `codex/ios-unsigned` 分支或手动触发此流程后运行，不发布 Release、不需要苹果签名密钥。未签名 IPA 需通过 Sideloadly 等工具使用自己的 Apple ID 签名后安装；本轮云端构建结果与 iPhone 验收状态分别记录，不能把出包视为真机验收。
 

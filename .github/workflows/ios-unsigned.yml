@@ -1,0 +1,67 @@
+name: Build Zhenguojian unsigned IPA
+
+on:
+  push:
+    branches: ['codex/ios-unsigned']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-unsigned-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      GOPROXY: https://proxy.golang.org,direct
+      GOSUMDB: sum.golang.org
+      FLUTTER_PREBUILT_ENGINE_VERSION: 06a2e2a110089dff50fe635cffd2a61e1b24fbcd
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache-dependency-path: native/go.sum
+      - name: Set up Flutter 3.47.4
+        run: |
+          git clone --depth 1 --branch 3.47.4 https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          git -C "$RUNNER_TEMP/flutter" checkout -B stable
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Prepare iOS build tools
+        run: |
+          xcodebuild -version
+          pod --version
+          flutter --version
+          flutter precache --ios
+      - name: Build all-source unsigned IPA
+        run: python3 scripts/build_ios.py --all-sources
+      - name: Verify IPA metadata and checksums
+        run: |
+          cd dist/ios
+          shasum -a 256 -c SHA256SUMS.txt
+          python3 - <<'PY'
+          import glob
+          import plistlib
+          import zipfile
+          package = glob.glob('zhenguojian-*-ios-unsigned.ipa')[0]
+          with zipfile.ZipFile(package) as archive:
+              info = plistlib.loads(archive.read('Payload/Runner.app/Info.plist'))
+              assert info['CFBundleDisplayName'] == '真果鉴', info
+              assert 'Payload/Runner.app/Runner' in archive.namelist()
+              print(package, info['CFBundleShortVersionString'], info['CFBundleVersion'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zhenguojian-ios-unsigned
+          path: |
+            dist/ios/*-ios-unsigned.ipa
+            dist/ios/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
